@@ -1,11 +1,8 @@
-﻿/* INT Globe — localStorage edition
-   Pins are stored in the browser. Use Export/Import to share between devices.
-*/
+﻿/* INT Globe — localStorage edition */
 
 var STORAGE_KEY = 'intglobe_pins';
 var AUTHOR_KEY  = 'intglobe_author';
 
-// ── Storage ──────────────────────────────────────────────────────────────────
 function loadPins() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
   catch (_) { return []; }
@@ -16,7 +13,6 @@ function savePins(pins) {
 }
 function getAuthor() { return localStorage.getItem(AUTHOR_KEY) || ''; }
 function setAuthor(n) { localStorage.setItem(AUTHOR_KEY, n); }
-
 function genId() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     var r = Math.random() * 16 | 0;
@@ -24,7 +20,7 @@ function genId() {
   });
 }
 
-// ── Map ──────────────────────────────────────────────────────────────────────
+// ── Map ───────────────────────────────────────────────────────────────────────
 var map, personalLayer, missionLayer;
 var placing = false;
 var pendingLL = null;
@@ -106,44 +102,58 @@ function updateFab() {
   else fab.classList.add('hidden');
 }
 
-// ── Add Pin flow ──────────────────────────────────────────────────────────────
-var fab      = document.getElementById('fab');
-var pinModal = document.getElementById('pin-modal');
-var saveBtn  = document.getElementById('save-btn');
+// ── Add Pin — two-step flow ───────────────────────────────────────────────────
+// Step 1: click FAB  → show hint bar, enter crosshair mode
+// Step 2: click map  → record coordinates, show form modal
+// Step 3: fill form  → save
 
-fab.addEventListener('click', function() { placing ? cancelPlace() : startPlace(); });
+var fab       = document.getElementById('fab');
+var placeHint = document.getElementById('place-hint');
+var pinModal  = document.getElementById('pin-modal');
+var saveBtn   = document.getElementById('save-btn');
+
+fab.addEventListener('click', function() {
+  if (placing) cancelPlace(); else startPlace();
+});
+
+document.getElementById('hint-cancel').addEventListener('click', cancelPlace);
 
 function startPlace() {
   placing = true; pendingLL = null;
   fab.classList.add('placing'); fab.title = 'Cancel (Esc)';
   map.getContainer().style.cursor = 'crosshair';
-  document.getElementById('f-title').value   = '';
-  document.getElementById('f-story').value   = '';
-  document.getElementById('f-country').value = '';
-  document.getElementById('f-coords').textContent = '';
-  saveBtn.disabled = true;
-  pinModal.classList.remove('hidden');
-}
-
-function cancelPlace() {
-  placing = false;
-  fab.classList.remove('placing'); fab.title = 'Add pin';
-  map.getContainer().style.cursor = '';
+  placeHint.classList.remove('hidden');
   pinModal.classList.add('hidden');
 }
 
+function cancelPlace() {
+  placing = false; pendingLL = null;
+  fab.classList.remove('placing'); fab.title = 'Add pin';
+  map.getContainer().style.cursor = '';
+  placeHint.classList.add('hidden');
+  pinModal.classList.add('hidden');
+}
+
+// Step 2: map click — record location, open form
 function onMapClick(e) {
   if (!placing) return;
   pendingLL = e.latlng;
+  // Reset form
+  document.getElementById('f-type').value    = 'personal';
+  document.getElementById('f-title').value   = '';
+  document.getElementById('f-story').value   = '';
+  document.getElementById('f-country').value = '';
   document.getElementById('f-coords').textContent =
-    e.latlng.lat.toFixed(4) + ', ' + e.latlng.lng.toFixed(4);
-  saveBtn.disabled = false;
+    '\uD83D\uDCCD ' + e.latlng.lat.toFixed(4) + ', ' + e.latlng.lng.toFixed(4);
+  placeHint.classList.add('hidden');
+  pinModal.classList.remove('hidden');
   document.getElementById('f-title').focus();
 }
 
 document.getElementById('cancel-btn').addEventListener('click', cancelPlace);
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') cancelPlace(); });
 
+// Step 3: save
 saveBtn.addEventListener('click', function() {
   if (!pendingLL) return;
   var author = getAuthor();
