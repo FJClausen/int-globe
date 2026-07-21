@@ -20,14 +20,20 @@
     </div>
   </header>
 
+  <!-- Step 1: click map hint (shown instead of modal while placing) -->
+  <div id="place-hint" class="hidden">
+    &#128205; Click anywhere on the map to place your pin &nbsp;&nbsp;
+    <button id="hint-cancel">Cancel (Esc)</button>
+  </div>
+
   <div id="map"></div>
   <button id="fab" class="hidden" title="Add pin">+</button>
 
-  <!-- Add Pin Modal -->
+  <!-- Step 2: fill in details (shown after map click) -->
   <div id="pin-modal" class="modal hidden">
     <div class="box">
       <h2>&#128205; Add a Pin</h2>
-      <p class="hint">Click a location on the map first, then fill in the details.</p>
+      <p id="f-coords" class="coords-display"></p>
       <label>Type
         <select id="f-type">
           <option value="personal">&#127968; Where I'm From &#8212; Personal Story</option>
@@ -42,10 +48,9 @@
       </label>
       <label>Country / Place
         <input id="f-country" type="text" placeholder="e.g. Kenya, Nairobi" />
-        <small id="f-coords"></small>
       </label>
       <div class="actions">
-        <button id="save-btn" disabled>Save Pin</button>
+        <button id="save-btn">Save Pin</button>
         <button id="cancel-btn" class="ghost">Cancel</button>
       </div>
     </div>
