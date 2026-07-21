@@ -20,10 +20,7 @@ header {
   display: flex; align-items: center; gap: 0.4rem;
   font-size: 0.83rem; color: #bbb; cursor: pointer; user-select: none;
 }
-.dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  display: inline-block; flex-shrink: 0;
-}
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 .dot.personal { background: #4fc3f7; box-shadow: 0 0 5px #4fc3f780; }
 .dot.mission  { background: #ff8a65; box-shadow: 0 0 5px #ff8a6580; }
 
@@ -39,6 +36,26 @@ header {
 }
 #author-input:focus { border-color: #0078D4; }
 
+/* Placing hint bar — shown between header and map */
+#place-hint {
+  background: rgba(0,120,212,0.18);
+  border-bottom: 1px solid rgba(0,120,212,0.5);
+  color: #90caf9; font-size: 0.85rem;
+  padding: 0.55rem 1.2rem;
+  display: flex; align-items: center; gap: 1rem;
+  z-index: 999; flex-shrink: 0;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+#place-hint button {
+  padding: 0.22rem 0.65rem;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 4px; color: #bbb;
+  cursor: pointer; font-size: 0.76rem;
+}
+#place-hint button:hover { background: rgba(255,255,255,0.15); }
+
 #map { flex: 1; z-index: 1; }
 
 #fab {
@@ -50,7 +67,7 @@ header {
   transition: transform 0.15s, background 0.15s;
   display: flex; align-items: center; justify-content: center;
 }
-#fab:hover  { transform: scale(1.08); }
+#fab:hover   { transform: scale(1.08); }
 #fab.placing { background: #c42b1c; box-shadow: 0 4px 14px rgba(196,43,28,0.5); }
 .hidden { display: none !important; }
 
@@ -86,14 +103,12 @@ header {
   width: 100%; max-width: 450px;
   box-shadow: 0 20px 50px rgba(0,0,0,0.55);
 }
-.box h2 { font-size: 1.1rem; margin-bottom: 0.85rem; }
-
-.hint {
-  font-size: 0.79rem; color: #888;
-  background: rgba(0,120,212,0.1);
-  border-left: 3px solid #0078D4;
-  padding: 0.45rem 0.7rem; border-radius: 0 4px 4px 0;
-  margin-bottom: 0.9rem;
+.box h2 { font-size: 1.1rem; margin-bottom: 0.6rem; }
+.coords-display {
+  font-size: 0.78rem; color: #4fc3f7;
+  background: rgba(79,195,247,0.07);
+  border-radius: 4px; padding: 0.3rem 0.6rem;
+  margin-bottom: 0.85rem;
 }
 
 .box label {
@@ -112,20 +127,15 @@ header {
 }
 .box input:focus, .box select:focus, .box textarea:focus { border-color: #0078D4; }
 .box textarea { resize: vertical; }
-.box small { color: #555; font-size: 0.71rem; }
 
-.actions {
-  display: flex; gap: 0.6rem; justify-content: flex-end;
-  margin-top: 1rem;
-}
+.actions { display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 1rem; }
 .actions button {
   padding: 0.48rem 1.15rem; border-radius: 6px;
   border: none; cursor: pointer; font-size: 0.86rem;
   transition: background 0.15s;
 }
 .actions button:first-child { background: #0078D4; color: #fff; }
-.actions button:first-child:hover:not(:disabled) { background: #106ebe; }
-.actions button:first-child:disabled { opacity: 0.38; cursor: not-allowed; }
+.actions button:first-child:hover { background: #106ebe; }
 button.ghost {
   background: transparent !important;
   border: 1px solid rgba(255,255,255,0.17) !important;
@@ -139,10 +149,7 @@ button.danger {
 }
 button.danger:hover { background: rgba(196,43,28,0.12) !important; }
 
-.view-top {
-  display: flex; justify-content: space-between;
-  align-items: center; margin-bottom: 0.7rem;
-}
+.view-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.7rem; }
 .badge {
   padding: 0.2rem 0.65rem; border-radius: 20px;
   font-size: 0.7rem; font-weight: 600;
@@ -150,17 +157,12 @@ button.danger:hover { background: rgba(196,43,28,0.12) !important; }
 }
 .badge.personal { background: rgba(79,195,247,0.16); color: #4fc3f7; }
 .badge.mission  { background: rgba(255,138,101,0.16); color: #ff8a65; }
-
-#v-close {
-  background: none; border: none; color: #666;
-  cursor: pointer; font-size: 0.9rem; padding: 0.1rem 0.3rem;
-}
+#v-close { background: none; border: none; color: #666; cursor: pointer; font-size: 0.9rem; padding: 0.1rem 0.3rem; }
 #v-close:hover { color: #fff; }
 .meta { font-size: 0.78rem; color: #666; margin-bottom: 0.18rem; }
 #v-story {
   margin-top: 0.8rem; line-height: 1.7; color: #ccc;
-  white-space: pre-wrap; max-height: 260px; overflow-y: auto;
-  font-size: 0.9rem;
+  white-space: pre-wrap; max-height: 260px; overflow-y: auto; font-size: 0.9rem;
 }
 
 .leaflet-popup-content-wrapper {
