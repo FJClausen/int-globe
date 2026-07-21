@@ -1,9 +1,0 @@
-﻿{
-  "routes": [
-    { "route": "/api/pins",  "methods": ["POST"],   "allowedRoles": ["authenticated"] },
-    { "route": "/api/pins/*","methods": ["DELETE"],  "allowedRoles": ["authenticated"] }
-  ],
-  "responseOverrides": {
-    "401": { "redirect": "/.auth/login/aad", "statusCode": 302 }
-  }
-}
