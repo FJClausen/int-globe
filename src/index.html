@@ -1,0 +1,69 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>INT Globe</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <span class="logo">&#127757; INT Globe</span>
+    <div class="layers">
+      <label><input type="checkbox" id="toggle-personal" checked /> <span class="dot personal"></span> Personal Stories</label>
+      <label><input type="checkbox" id="toggle-mission"  checked /> <span class="dot mission"></span>  Case / Mission</label>
+    </div>
+    <button id="auth-btn">Sign In</button>
+  </header>
+
+  <div id="map"></div>
+  <button id="fab" class="hidden" title="Add pin">+</button>
+
+  <!-- Add Pin Modal -->
+  <div id="pin-modal" class="modal hidden">
+    <div class="box">
+      <h2>&#128205; Add a Pin</h2>
+      <p class="hint">Click a location on the map first, then fill in the details.</p>
+      <label>Type
+        <select id="f-type">
+          <option value="personal">&#127968; Where I'm From &#8212; Personal Story</option>
+          <option value="mission">&#128203; Case / Mission Story</option>
+        </select>
+      </label>
+      <label>Title *
+        <input id="f-title" type="text" maxlength="200" placeholder="A short title&#8230;" />
+      </label>
+      <label>Story
+        <textarea id="f-story" rows="5" placeholder="Share your story&#8230;"></textarea>
+      </label>
+      <label>Country / Place
+        <input id="f-country" type="text" placeholder="e.g. Kenya, Nairobi" />
+        <small id="f-coords"></small>
+      </label>
+      <div class="actions">
+        <button id="save-btn" disabled>Save Pin</button>
+        <button id="cancel-btn" class="ghost">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Pin Modal -->
+  <div id="view-modal" class="modal hidden">
+    <div class="box">
+      <div class="view-top">
+        <span id="v-badge" class="badge"></span>
+        <button id="v-close">&#x2715;</button>
+      </div>
+      <h2 id="v-title"></h2>
+      <p id="v-location" class="meta"></p>
+      <p id="v-author"   class="meta"></p>
+      <div id="v-story"></div>
+      <div id="v-actions" class="actions"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
