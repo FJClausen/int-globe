@@ -14,7 +14,10 @@
       <label><input type="checkbox" id="toggle-personal" checked /> <span class="dot personal"></span> Personal Stories</label>
       <label><input type="checkbox" id="toggle-mission"  checked /> <span class="dot mission"></span>  Case / Mission</label>
     </div>
-    <button id="auth-btn">Sign In</button>
+    <div class="name-area">
+      <span class="name-label">Your name:</span>
+      <input id="author-input" type="text" placeholder="Enter your name to add pins" maxlength="80" />
+    </div>
   </header>
 
   <div id="map"></div>
@@ -61,6 +64,13 @@
       <div id="v-story"></div>
       <div id="v-actions" class="actions"></div>
     </div>
+  </div>
+
+  <!-- Export / Import bar -->
+  <div id="share-bar">
+    <button id="export-btn" title="Export pins as JSON">&#8595; Export</button>
+    <label id="import-label" title="Import pins from JSON">&#8593; Import<input id="import-input" type="file" accept=".json" /></label>
+    <span id="pin-count"></span>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
