@@ -23,8 +23,8 @@ app.http('upsertPin', {
       const { pin_type, title, story, lat, lng, country } = await req.json();
       if (!pin_type || !title || lat == null || lng == null)
         return { status: 400, body: JSON.stringify({ error: 'Missing required fields' }) };
-      if (!['personal', 'mission'].includes(pin_type))
-        return { status: 400, body: JSON.stringify({ error: 'Invalid pin_type' }) };
+      if (pin_type !== 'personal')
+        return { status: 400, body: JSON.stringify({ error: 'Only personal stories are supported' }) };
       const pool = await getPool();
       const r = await pool.request()
         .input('pt', sql.NVarChar(20),       pin_type)

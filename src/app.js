@@ -4,11 +4,20 @@ var STORAGE_KEY = 'intglobe_pins';
 var AUTHOR_KEY  = 'intglobe_author';
 
 function loadPins() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  try {
+    var pins = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    return Array.isArray(pins) ? pins.filter(function(p) { return p.pin_type === 'personal'; }) : [];
+  }
   catch (_) { return []; }
 }
 function savePins(pins) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(pins));
+  var legacyPins = [];
+  try {
+    var storedPins = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    if (Array.isArray(storedPins))
+      legacyPins = storedPins.filter(function(p) { return p.pin_type !== 'personal'; });
+  } catch (_) {}
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(legacyPins.concat(pins)));
   updateCount();
 }
 function getAuthor() { return localStorage.getItem(AUTHOR_KEY) || ''; }
@@ -21,24 +30,97 @@ function genId() {
 }
 
 // ── Map ───────────────────────────────────────────────────────────────────────
-var map, personalLayer, missionLayer;
+var map, personalLayer, globe;
+var activeMode = 'map';
+var isPresentation = false;
 var placing = false;
 var pendingLL = null;
 var store = {};
+var globeContainer = document.getElementById('globe');
 
 function initMap() {
   map = L.map('map', { center: [20, 0], zoom: 2, minZoom: 2 });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 18,
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+    maxZoom: 19,
+  }).addTo(map);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Labels &copy; Esri, HERE, Garmin, FAO, NOAA, USGS, EPA, and NPS',
+    maxZoom: 19,
+    pane: 'overlayPane',
   }).addTo(map);
   personalLayer = L.layerGroup().addTo(map);
-  missionLayer  = L.layerGroup().addTo(map);
   map.on('click', onMapClick);
 }
 
-function pinIcon(type) {
-  var c = type === 'personal' ? '#4fc3f7' : '#ff8a65';
+function initGlobe() {
+  if (globe) return true;
+  if (typeof Globe !== 'function') {
+    alert('The 3D globe could not be loaded. Check your internet connection and try again.');
+    return false;
+  }
+  globe = Globe()(globeContainer)
+    .globeImageUrl('https://unpkg.com/three-globe@2.32.0/example/img/earth-blue-marble.jpg')
+    .bumpImageUrl('https://unpkg.com/three-globe@2.32.0/example/img/earth-topology.png')
+    .backgroundColor('#070b16')
+    .showAtmosphere(true)
+    .atmosphereColor('#72c8ff')
+    .atmosphereAltitude(0.18)
+    .htmlElementsData([])
+    .htmlLat(function(pin) { return +pin.lat; })
+    .htmlLng(function(pin) { return +pin.lng; })
+    .htmlAltitude(0.012)
+    .htmlElement(function(pin) {
+      var marker = document.createElement('button');
+      marker.className = 'globe-marker';
+      marker.type = 'button';
+      marker.title = pin.title;
+      marker.setAttribute('aria-label', 'Read story: ' + pin.title);
+      marker.addEventListener('click', function(event) {
+        event.stopPropagation();
+        window.openView(pin.id);
+      });
+      return marker;
+    })
+    .onGlobeClick(function(coords) {
+      if (placing) onMapClick({ latlng: { lat: coords.lat, lng: coords.lng } });
+    });
+  globe.pointOfView({ lat: 18, lng: 0, altitude: 2.35 }, 0);
+  globe.controls().autoRotate = true;
+  globe.controls().autoRotateSpeed = 0.32;
+  globe.controls().enableDamping = true;
+  updateGlobeSize();
+  updateGlobePins();
+  return true;
+}
+
+function updateGlobeSize() {
+  if (globe) {
+    globe.width(globeContainer.clientWidth);
+    globe.height(globeContainer.clientHeight);
+  }
+}
+
+function updateGlobePins() {
+  if (globe) globe.htmlElementsData(loadPins());
+}
+
+function setMapMode(mode) {
+  if (mode === 'globe' && !initGlobe()) return false;
+  activeMode = mode;
+  document.getElementById('map-mode').classList.toggle('active', mode === 'map');
+  document.getElementById('map-mode').setAttribute('aria-pressed', mode === 'map');
+  document.getElementById('globe-mode').classList.toggle('active', mode === 'globe');
+  document.getElementById('globe-mode').setAttribute('aria-pressed', mode === 'globe');
+  document.getElementById('map').classList.toggle('hidden', mode !== 'map');
+  globeContainer.classList.toggle('hidden', mode !== 'globe');
+  if (mode === 'map') map.invalidateSize();
+  else requestAnimationFrame(updateGlobeSize);
+  return true;
+}
+
+function pinIcon() {
+  var c = '#4fc3f7';
   var svg =
     '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="32" viewBox="0 0 22 32">' +
     '<path d="M11 0C4.9 0 0 4.9 0 11c0 8.3 11 21 11 21S22 19.3 22 11C22 4.9 17.1 0 11 0z"' +
@@ -48,8 +130,8 @@ function pinIcon(type) {
 }
 
 function renderPin(pin) {
-  var layer = pin.pin_type === 'personal' ? personalLayer : missionLayer;
-  var m = L.marker([pin.lat, pin.lng], { icon: pinIcon(pin.pin_type) });
+  if (pin.pin_type !== 'personal') return;
+  var m = L.marker([pin.lat, pin.lng], { icon: pinIcon() });
   var preview = (pin.story || '').slice(0, 90) + ((pin.story || '').length > 90 ? '\u2026' : '');
   m.bindPopup(
     '<div class="popup">' +
@@ -61,33 +143,27 @@ function renderPin(pin) {
     '</div>'
   );
   m._pinId = pin.id;
-  layer.addLayer(m);
+  personalLayer.addLayer(m);
   store[pin.id] = pin;
+  updateGlobePins();
 }
 
 function reloadAllPins() {
   personalLayer.clearLayers();
-  missionLayer.clearLayers();
   store = {};
   loadPins().forEach(renderPin);
+  updateGlobePins();
   updateCount();
 }
 
 function updateCount() {
   var pins = loadPins();
-  var p = pins.filter(function(x) { return x.pin_type === 'personal'; }).length;
-  var m = pins.filter(function(x) { return x.pin_type === 'mission'; }).length;
   document.getElementById('pin-count').textContent =
-    p + ' personal  \u00B7  ' + m + ' mission  \u00B7  ' + pins.length + ' total';
+    pins.length + (pins.length === 1 ? ' personal story' : ' personal stories');
 }
 
-// ── Layer toggles ─────────────────────────────────────────────────────────────
-document.getElementById('toggle-personal').addEventListener('change', function(e) {
-  if (e.target.checked) map.addLayer(personalLayer); else map.removeLayer(personalLayer);
-});
-document.getElementById('toggle-mission').addEventListener('change', function(e) {
-  if (e.target.checked) map.addLayer(missionLayer); else map.removeLayer(missionLayer);
-});
+document.getElementById('map-mode').addEventListener('click', function() { setMapMode('map'); });
+document.getElementById('globe-mode').addEventListener('click', function() { setMapMode('globe'); });
 
 // ── Author name ───────────────────────────────────────────────────────────────
 var authorInput = document.getElementById('author-input');
@@ -98,7 +174,7 @@ authorInput.addEventListener('input', function() {
 });
 function updateFab() {
   var fab = document.getElementById('fab');
-  if (getAuthor()) fab.classList.remove('hidden');
+  if (getAuthor() && !isPresentation) fab.classList.remove('hidden');
   else fab.classList.add('hidden');
 }
 
@@ -121,15 +197,17 @@ document.getElementById('hint-cancel').addEventListener('click', cancelPlace);
 function startPlace() {
   placing = true; pendingLL = null;
   fab.classList.add('placing'); fab.title = 'Cancel (Esc)';
-  map.getContainer().style.cursor = 'crosshair';
+  if (activeMode === 'map') map.getContainer().style.cursor = 'crosshair';
+  else globeContainer.style.cursor = 'crosshair';
   placeHint.classList.remove('hidden');
   pinModal.classList.add('hidden');
 }
 
 function cancelPlace() {
   placing = false; pendingLL = null;
-  fab.classList.remove('placing'); fab.title = 'Add pin';
+  fab.classList.remove('placing'); fab.title = 'Add story';
   map.getContainer().style.cursor = '';
+  globeContainer.style.cursor = '';
   placeHint.classList.add('hidden');
   pinModal.classList.add('hidden');
 }
@@ -139,7 +217,6 @@ function onMapClick(e) {
   if (!placing) return;
   pendingLL = e.latlng;
   // Reset form
-  document.getElementById('f-type').value    = 'personal';
   document.getElementById('f-title').value   = '';
   document.getElementById('f-story').value   = '';
   document.getElementById('f-country').value = '';
@@ -160,7 +237,7 @@ saveBtn.addEventListener('click', function() {
   if (!author) { alert('Please enter your name in the header first.'); return; }
   var pin = {
     id:          genId(),
-    pin_type:    document.getElementById('f-type').value,
+    pin_type:    'personal',
     title:       document.getElementById('f-title').value.trim(),
     story:       document.getElementById('f-story').value.trim(),
     lat:         pendingLL.lat,
@@ -183,8 +260,8 @@ var viewModal = document.getElementById('view-modal');
 window.openView = function(id) {
   var p = store[id]; if (!p) return;
   var badge = document.getElementById('v-badge');
-  badge.textContent = p.pin_type === 'personal' ? '\uD83C\uDFE0 Personal Story' : '\uD83D\uDCCB Case / Mission';
-  badge.className   = 'badge ' + p.pin_type;
+  badge.textContent = '\uD83C\uDFE0 Personal Story';
+  badge.className   = 'badge personal';
   document.getElementById('v-title').textContent    = p.title;
   document.getElementById('v-location').textContent =
     '\uD83D\uDCCD ' + (p.country ? p.country + '  ' : '') +
@@ -197,7 +274,7 @@ window.openView = function(id) {
   acts.innerHTML = '';
   if (p.author_name === getAuthor() && getAuthor()) {
     var d = document.createElement('button');
-    d.className = 'ghost danger'; d.textContent = 'Delete Pin';
+    d.className = 'ghost danger'; d.textContent = 'Delete Story';
     d.onclick = function() { deletePin(id); };
     acts.appendChild(d);
   }
@@ -208,13 +285,14 @@ document.getElementById('v-close').addEventListener('click', function() { viewMo
 viewModal.addEventListener('click', function(e) { if (e.target === viewModal) viewModal.classList.add('hidden'); });
 
 function deletePin(id) {
-  if (!confirm('Delete this pin? This cannot be undone.')) return;
+  if (!confirm('Delete this story? This cannot be undone.')) return;
   var pins = loadPins().filter(function(p) { return p.id !== id; });
   savePins(pins);
   delete store[id];
-  [personalLayer, missionLayer].forEach(function(l) {
-    l.eachLayer(function(m) { if (m._pinId === id) l.removeLayer(m); });
+  personalLayer.eachLayer(function(m) {
+    if (m._pinId === id) personalLayer.removeLayer(m);
   });
+  updateGlobePins();
   viewModal.classList.add('hidden');
 }
 
@@ -224,7 +302,7 @@ document.getElementById('export-btn').addEventListener('click', function() {
   var blob = new Blob([JSON.stringify(pins, null, 2)], { type: 'application/json' });
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'int-globe-pins-' + new Date().toISOString().slice(0,10) + '.json';
+  a.download = 'int-globe-stories-' + new Date().toISOString().slice(0,10) + '.json';
   a.click();
 });
 
@@ -240,8 +318,8 @@ document.getElementById('import-input').addEventListener('change', function(e) {
       existing.forEach(function(p) { existingIds[p.id] = true; });
       var added = 0;
       incoming.forEach(function(p) {
-        if (p.id && p.pin_type && p.title && p.lat != null && p.lng != null && !existingIds[p.id]) {
-          existing.push(p); added++;
+        if (p.id && p.pin_type === 'personal' && p.title && p.lat != null && p.lng != null && !existingIds[p.id]) {
+          existing.push(p); existingIds[p.id] = true; added++;
         }
       });
       savePins(existing);
@@ -251,6 +329,33 @@ document.getElementById('import-input').addEventListener('change', function(e) {
     e.target.value = '';
   };
   reader.readAsText(file);
+});
+
+function enterPresentation() {
+  cancelPlace();
+  if (!setMapMode('globe')) return;
+  isPresentation = true;
+  document.body.classList.add('presentation');
+  document.getElementById('presentation-exit').classList.remove('hidden');
+  updateFab();
+  requestAnimationFrame(updateGlobeSize);
+}
+
+function exitPresentation() {
+  isPresentation = false;
+  document.body.classList.remove('presentation');
+  document.getElementById('presentation-exit').classList.add('hidden');
+  updateFab();
+  requestAnimationFrame(updateGlobeSize);
+}
+
+document.getElementById('present-btn').addEventListener('click', enterPresentation);
+document.getElementById('presentation-exit').addEventListener('click', exitPresentation);
+window.addEventListener('resize', function() {
+  if (activeMode === 'globe') updateGlobeSize();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && isPresentation) exitPresentation();
 });
 
 // ── Util ──────────────────────────────────────────────────────────────────────

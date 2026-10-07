@@ -2,7 +2,7 @@
 
 CREATE TABLE pins (
     id          UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-    pin_type    NVARCHAR(20)  NOT NULL CHECK (pin_type IN ('personal','mission')),
+    pin_type    NVARCHAR(20)  NOT NULL CHECK (pin_type = 'personal'),
     title       NVARCHAR(200) NOT NULL,
     story       NVARCHAR(MAX) NULL,
     lat         DECIMAL(9,6)  NOT NULL,
@@ -14,6 +14,5 @@ CREATE TABLE pins (
     updated_at  DATETIME2 NOT NULL DEFAULT GETUTCDATE()
 );
 
-CREATE INDEX idx_pins_type    ON pins (pin_type);
 CREATE INDEX idx_pins_author  ON pins (author_id);
 CREATE INDEX idx_pins_created ON pins (created_at DESC);

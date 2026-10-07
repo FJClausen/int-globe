@@ -1,10 +1,8 @@
 ﻿# INT Globe
 
-Interactive world map with two pin layers:
-- **Personal Stories** — "where I'm from" stories from people across the organisation
-- **Case / Mission Stories** — project/case pins by geography
+Interactive map for **Personal Stories** — "where I'm from" stories from people across the organisation. The flat map combines satellite imagery with country boundaries and place labels; zoom in to see cities and find a hometown before placing a story. Switch to the automatically rotating 3D globe at any time. **Present** opens a clean, full-screen globe view for conference rooms; press Escape or use the exit button to return.
 
-Both layers can be toggled independently. Users sign in with their Microsoft/Entra ID account to add and manage their own pins.
+Add stories by entering your name, choosing a location on either view, and filling in the story form. The Culture Club logo appears in the app header. Older case/mission pins are no longer displayed or accepted; existing stored records are left untouched.
 
 ## Architecture
 
@@ -104,6 +102,7 @@ int-globe/
 |  |- index.html
 |  |- styles.css
 |  |- app.js
+|  |- culture-club-logo.png
 |  +- staticwebapp.config.json
 |- api/                          # Azure Functions v4 (Node 18)
 |  |- src/functions/

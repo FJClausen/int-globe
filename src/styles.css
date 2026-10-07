@@ -13,16 +13,24 @@ header {
   border-bottom: 1px solid rgba(255,255,255,0.08);
   z-index: 1000; flex-shrink: 0; flex-wrap: wrap;
 }
-.logo { font-size: 1.15rem; font-weight: 700; }
-
-.layers { display: flex; gap: 1rem; align-items: center; margin-right: auto; }
-.layers label {
-  display: flex; align-items: center; gap: 0.4rem;
-  font-size: 0.83rem; color: #bbb; cursor: pointer; user-select: none;
+.club-logo {
+  width: 52px; height: 52px; object-fit: contain;
+  background: #fff; border-radius: 8px; padding: 2px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.22);
 }
-.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-.dot.personal { background: #4fc3f7; box-shadow: 0 0 5px #4fc3f780; }
-.dot.mission  { background: #ff8a65; box-shadow: 0 0 5px #ff8a6580; }
+.brand { display: flex; flex-direction: column; gap: 0.12rem; }
+.logo { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.01em; }
+.brand-subtitle { color: #8f9aaf; font-size: 0.7rem; letter-spacing: 0.04em; }
+
+.view-controls { display: flex; align-items: center; gap: 0.35rem; margin: 0 auto; }
+.view-button {
+  padding: 0.42rem 0.85rem; border: 1px solid transparent; border-radius: 6px;
+  background: transparent; color: #aeb8ca; cursor: pointer; font-size: 0.82rem;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.view-button:hover { background: rgba(255,255,255,0.07); color: #fff; }
+.view-button.active { background: rgba(79,195,247,0.13); border-color: rgba(79,195,247,0.32); color: #8bdcff; }
+.present-button { border-color: rgba(255,255,255,0.12); }
 
 .name-area { display: flex; align-items: center; gap: 0.5rem; }
 .name-label { font-size: 0.76rem; color: #777; white-space: nowrap; }
@@ -56,7 +64,19 @@ header {
 }
 #place-hint button:hover { background: rgba(255,255,255,0.15); }
 
-#map { flex: 1; z-index: 1; }
+#map, #globe { flex: 1; min-height: 0; z-index: 1; }
+#globe { background: #070b16; overflow: hidden; }
+.leaflet-bottom { bottom: 2.4rem; }
+.globe-marker {
+  width: 13px; height: 13px; padding: 0; border-radius: 50%;
+  border: 2px solid #fff; background: #27baf2;
+  box-shadow: 0 0 0 4px rgba(39,186,242,0.28), 0 0 14px rgba(39,186,242,0.95);
+  cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+}
+.globe-marker:hover {
+  transform: scale(1.35);
+  box-shadow: 0 0 0 6px rgba(39,186,242,0.3), 0 0 18px rgba(39,186,242,1);
+}
 
 #fab {
   position: fixed; bottom: 3.8rem; right: 1.8rem;
@@ -69,6 +89,15 @@ header {
 }
 #fab:hover   { transform: scale(1.08); }
 #fab.placing { background: #c42b1c; box-shadow: 0 4px 14px rgba(196,43,28,0.5); }
+#presentation-exit {
+  position: fixed; top: 1rem; right: 1rem; z-index: 1500;
+  padding: 0.55rem 0.9rem; border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px; background: rgba(10,10,25,0.72); color: #fff;
+  cursor: pointer; font-size: 0.8rem; backdrop-filter: blur(8px);
+}
+#presentation-exit:hover { background: rgba(10,10,25,0.92); }
+body.presentation header, body.presentation #share-bar, body.presentation #fab,
+body.presentation #place-hint { display: none; }
 .hidden { display: none !important; }
 
 #share-bar {
@@ -156,7 +185,6 @@ button.danger:hover { background: rgba(196,43,28,0.12) !important; }
   text-transform: uppercase; letter-spacing: 0.07em;
 }
 .badge.personal { background: rgba(79,195,247,0.16); color: #4fc3f7; }
-.badge.mission  { background: rgba(255,138,101,0.16); color: #ff8a65; }
 #v-close { background: none; border: none; color: #666; cursor: pointer; font-size: 0.9rem; padding: 0.1rem 0.3rem; }
 #v-close:hover { color: #fff; }
 .meta { font-size: 0.78rem; color: #666; margin-bottom: 0.18rem; }
@@ -177,4 +205,12 @@ button.danger:hover { background: rgba(196,43,28,0.12) !important; }
   background: none; border: none; color: #4fc3f7;
   cursor: pointer; font-size: 0.75rem; padding: 0;
   text-decoration: underline; margin-top: 0.3rem; display: block;
+}
+
+@media (max-width: 700px) {
+  header { gap: 0.65rem; padding: 0.5rem 0.7rem; }
+  .club-logo { width: 42px; height: 42px; }
+  .view-controls { order: 3; width: 100%; justify-content: center; margin: 0; }
+  .name-area { margin-left: auto; }
+  #author-input { width: 145px; }
 }
