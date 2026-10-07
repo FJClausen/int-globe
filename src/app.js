@@ -118,8 +118,8 @@ function updateGlobePins() {
 }
 
 function createStoryTag(pin) {
-  var width = 760;
-  var height = 200;
+  var width = 900;
+  var height = 250;
   var canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -127,7 +127,7 @@ function createStoryTag(pin) {
   if (!context) throw new Error('Could not create story marker canvas');
 
   context.beginPath();
-  context.roundRect(190, 8, width - 198, 102, 28);
+  context.roundRect(300, 8, width - 308, 112, 30);
   context.fillStyle = 'rgba(5, 17, 35, 0.96)';
   context.fill();
   context.lineWidth = 3;
@@ -135,22 +135,22 @@ function createStoryTag(pin) {
   context.stroke();
   context.textAlign = 'center';
   context.textBaseline = 'middle';
-  context.font = '700 36px "Segoe UI", Arial, sans-serif';
+  context.font = '700 40px "Segoe UI", Arial, sans-serif';
   context.fillStyle = '#ffffff';
-  context.fillText(storyHint(pin), 475, 59, 540);
+  context.fillText(storyHint(pin), 600, 64, 560);
   var author = pin.author_name || 'Anonymous';
-  context.font = 'italic 600 28px "Segoe UI", Arial, sans-serif';
-  var authorWidth = Math.min(540, Math.max(180, context.measureText(author).width + 48));
-  var authorLeft = 475 - authorWidth / 2;
+  context.font = 'italic 600 32px "Segoe UI", Arial, sans-serif';
+  var authorWidth = Math.min(560, Math.max(200, context.measureText(author).width + 52));
+  var authorLeft = 600 - authorWidth / 2;
   context.beginPath();
-  context.roundRect(authorLeft, 126, authorWidth, 62, 22);
+  context.roundRect(authorLeft, 140, authorWidth, 76, 24);
   context.fillStyle = 'rgba(5, 17, 35, 0.82)';
   context.fill();
   context.lineWidth = 2;
   context.strokeStyle = 'rgba(139, 220, 255, 0.5)';
   context.stroke();
   context.fillStyle = '#a9e3ff';
-  context.fillText(author, 475, 157, authorWidth - 24);
+  context.fillText(author, 600, 178, authorWidth - 28);
 
   var texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -162,7 +162,7 @@ function createStoryTag(pin) {
     toneMapped: false,
   });
   var radius = globe.getGlobeRadius();
-  var tagWidth = radius * 0.46;
+  var tagWidth = radius * 0.85;
   var tagHeight = tagWidth * height / width;
   var tag = new THREE.Mesh(new THREE.PlaneGeometry(tagWidth, tagHeight), material);
   tag.userData.pinId = pin.id;
@@ -170,9 +170,9 @@ function createStoryTag(pin) {
   artwork.onload = function() {
     context.save();
     context.beginPath();
-    context.roundRect(8, 8, 174, 174, 34);
+    context.roundRect(8, 8, 280, 234, 36);
     context.clip();
-    context.drawImage(artwork, 8, 8, 174, 174);
+    context.drawImage(artwork, 8, 8, 280, 234);
     context.restore();
     texture.needsUpdate = true;
   };
