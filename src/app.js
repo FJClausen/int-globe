@@ -80,8 +80,12 @@ function initGlobe() {
     .pointColor(function() { return '#ffc878'; })
     .onPointClick(function(pin) { window.openView(pin.id); })
     .objectsData([])
-    .objectLat(function(pin) { return Math.max(-89.5, +pin.lat - 7); })
-    .objectLng(function(pin) { return +pin.lng; })
+    .objectLat(function(pin) { return +pin.lat; })
+    .objectLng(function(pin) {
+      var latRadians = +pin.lat * Math.PI / 180;
+      var offset = 8 / Math.max(0.25, Math.cos(latRadians));
+      return ((+pin.lng + offset + 540) % 360) - 180;
+    })
     .objectAltitude(0.025)
     .objectFacesSurface(true)
     .objectThreeObject(createStoryTag)
@@ -114,8 +118,8 @@ function updateGlobePins() {
 }
 
 function createStoryTag(pin) {
-  var width = 640;
-  var height = 164;
+  var width = 760;
+  var height = 200;
   var canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -123,7 +127,7 @@ function createStoryTag(pin) {
   if (!context) throw new Error('Could not create story marker canvas');
 
   context.beginPath();
-  context.roundRect(4, 4, width - 8, 78, 26);
+  context.roundRect(190, 8, width - 198, 102, 28);
   context.fillStyle = 'rgba(5, 17, 35, 0.96)';
   context.fill();
   context.lineWidth = 3;
@@ -131,23 +135,22 @@ function createStoryTag(pin) {
   context.stroke();
   context.textAlign = 'center';
   context.textBaseline = 'middle';
-  context.font = '600 34px "Segoe UI", Arial, sans-serif';
+  context.font = '700 36px "Segoe UI", Arial, sans-serif';
   context.fillStyle = '#ffffff';
-  context.fillText(storyHint(pin), width / 2, 43, width - 44);
+  context.fillText(storyHint(pin), 475, 59, 540);
   var author = pin.author_name || 'Anonymous';
-  context.font = 'italic 600 30px "Segoe UI", Arial, sans-serif';
-  context.fillStyle = '#a9e3ff';
-  var authorWidth = Math.min(width - 20, Math.max(180, context.measureText(author).width + 44));
-  var authorLeft = (width - authorWidth) / 2;
+  context.font = 'italic 600 28px "Segoe UI", Arial, sans-serif';
+  var authorWidth = Math.min(540, Math.max(180, context.measureText(author).width + 48));
+  var authorLeft = 475 - authorWidth / 2;
   context.beginPath();
-  context.roundRect(authorLeft, 94, authorWidth, 62, 22);
+  context.roundRect(authorLeft, 126, authorWidth, 62, 22);
   context.fillStyle = 'rgba(5, 17, 35, 0.82)';
   context.fill();
   context.lineWidth = 2;
   context.strokeStyle = 'rgba(139, 220, 255, 0.5)';
   context.stroke();
   context.fillStyle = '#a9e3ff';
-  context.fillText(author, width / 2, 125, authorWidth - 24);
+  context.fillText(author, 475, 157, authorWidth - 24);
 
   var texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -159,11 +162,79 @@ function createStoryTag(pin) {
     toneMapped: false,
   });
   var radius = globe.getGlobeRadius();
-  var tagWidth = radius * 0.6;
+  var tagWidth = radius * 0.46;
   var tagHeight = tagWidth * height / width;
   var tag = new THREE.Mesh(new THREE.PlaneGeometry(tagWidth, tagHeight), material);
   tag.userData.pinId = pin.id;
+  var artwork = new Image();
+  artwork.onload = function() {
+    context.save();
+    context.beginPath();
+    context.roundRect(8, 8, 174, 174, 34);
+    context.clip();
+    context.drawImage(artwork, 8, 8, 174, 174);
+    context.restore();
+    texture.needsUpdate = true;
+  };
+  artwork.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(storyArtwork(pin));
   return tag;
+}
+
+function storyArtwork(pin) {
+  var text = ((pin.title || '') + ' ' + (pin.story || '')).toLowerCase();
+  var scene;
+  if (/\b(famil|parent|wedding|celebrat|festival|birthday|gather|together|reunion|friend)\w*/.test(text)) {
+    scene = {
+      label: 'Celebration',
+      colors: ['#ff6d3a', '#ffd34e', '#34b8b4'],
+      art: '<path d="M38 126Q78 90 116 126T198 118" fill="none" stroke="#143a58" stroke-width="8" stroke-linecap="round"/><path d="M73 113h92v32q-46 19-92 0z" fill="#ff7044" stroke="#143a58" stroke-width="5"/><path d="M84 107h70v17H84z" fill="#fff0c1" stroke="#143a58" stroke-width="4"/><path d="M119 103V78m-14 20q-9-12 0-20 9 8 0 20zm28 0q9-12 0-20-9 8 0 20z" fill="#ffd34e" stroke="#143a58" stroke-width="4"/><path d="m50 67 7 15m-2-25 14 7m105 14 14-9m-8 27 16 2" stroke="#ff6d3a" stroke-width="6" stroke-linecap="round"/>'
+    };
+  } else if (/\b(music|song|sing|dance|drum|rhythm|concert|choir|instrument)\w*/.test(text)) {
+    scene = {
+      label: 'Music',
+      colors: ['#7254c8', '#35b8b1', '#ffc64b'],
+      art: '<path d="M65 97q54-30 109 0l-9 48q-45 20-91 0z" fill="#ff7044" stroke="#143a58" stroke-width="6"/><ellipse cx="119" cy="98" rx="54" ry="19" fill="#ffd34e" stroke="#143a58" stroke-width="6"/><path d="M82 109q37 17 74 0m-71 16q34 16 68 0" fill="none" stroke="#fff0c1" stroke-width="5" stroke-linecap="round"/><path d="M67 57q19-19 31 0t30 0m13 2q15-21 30-3t25-2" fill="none" stroke="#7254c8" stroke-width="7" stroke-linecap="round"/><circle cx="60" cy="88" r="6" fill="#35b8b1"/><circle cx="184" cy="75" r="7" fill="#ff7044"/>'
+    };
+  } else if (/\b(food|cook|cooking|meal|recipe|bread|dish|kitchen|feast|taste|rice|tea|coffee|spice)\w*/.test(text)) {
+    scene = {
+      label: 'Food',
+      colors: ['#ff7044', '#ffd34e', '#35b8b1'],
+      art: '<path d="M55 93q62 81 128 0z" fill="#ff7044" stroke="#143a58" stroke-width="6"/><ellipse cx="119" cy="92" rx="64" ry="21" fill="#fff0c1" stroke="#143a58" stroke-width="6"/><path d="M85 88q8-24 20-4 13-29 25-3 17-23 28 3" fill="none" stroke="#35b8b1" stroke-width="8" stroke-linecap="round"/><circle cx="97" cy="80" r="8" fill="#ff7044"/><circle cx="145" cy="78" r="9" fill="#ffd34e"/><path d="M172 48v38m-9-28q9-20 18 0m-106-8v28m-9-19q9-19 18 0" fill="none" stroke="#143a58" stroke-width="6" stroke-linecap="round"/>'
+    };
+  } else if (/\b(travel|journey|trip|mountain|ocean|river|sea|hiking|visit|road|move|return|island|coast)\w*/.test(text)) {
+    scene = {
+      label: 'Journey',
+      colors: ['#35b8b1', '#4488d4', '#ffd34e'],
+      art: '<path d="M28 130 78 61l34 43 28-31 72 68H28z" fill="#35b8b1" stroke="#143a58" stroke-width="6" stroke-linejoin="round"/><path d="m78 61 17 22-19-9-17 16zm62 12 18 21-24-7-14 12z" fill="#fff0c1"/><path d="M44 151q25-14 49 0t49 0 49 0 27 0" fill="none" stroke="#4488d4" stroke-width="9" stroke-linecap="round"/><path d="M119 45v76m0-70 35 52h-35" fill="#ff7044" stroke="#143a58" stroke-width="5" stroke-linejoin="round"/><path d="M51 47q15-14 30 0m92-11q17-16 34 0" fill="none" stroke="#ff7044" stroke-width="6" stroke-linecap="round"/>'
+    };
+  } else if (/\b(art|craft|draw|paint|sew|make|create|weav|pottery|design|build|knit)\w*/.test(text)) {
+    scene = {
+      label: 'Creativity',
+      colors: ['#ff7044', '#7254c8', '#35b8b1'],
+      art: '<path d="m65 135 43-66q9-12 20-4l22 15q10 8 2 20l-45 65z" fill="#ff7044" stroke="#143a58" stroke-width="6" stroke-linejoin="round"/><path d="m106 70 36 27m-52-9 36 27m-55-8 34 26" fill="none" stroke="#ffd34e" stroke-width="8" stroke-linecap="round"/><path d="M46 57q15-18 30 0t30 0m31-10q15-18 30 0t30 0" fill="none" stroke="#7254c8" stroke-width="7" stroke-linecap="round"/><circle cx="179" cy="119" r="15" fill="#35b8b1" stroke="#143a58" stroke-width="5"/><circle cx="54" cy="111" r="9" fill="#ffd34e"/>'
+    };
+  } else if (/\b(home|house|community|village|neighbou?rhood|school|market|street|local|belong|childhood)\w*/.test(text)) {
+    scene = {
+      label: 'Community',
+      colors: ['#35b8b1', '#ff7044', '#ffd34e'],
+      art: '<path d="m39 104 38-35 39 35v48H39zm81-15 33-31 39 33v61h-72z" fill="#ff7044" stroke="#143a58" stroke-width="6" stroke-linejoin="round"/><path d="M62 112h22v40H62zm73-4h19v23h-19zm35 0h18v23h-18z" fill="#fff0c1" stroke="#143a58" stroke-width="5"/><path d="M31 158q46-18 89 0t87 0" fill="none" stroke="#35b8b1" stroke-width="9" stroke-linecap="round"/><circle cx="166" cy="46" r="18" fill="#ffd34e"/><path d="M48 54q20-13 38 0" fill="none" stroke="#7254c8" stroke-width="6" stroke-linecap="round"/>'
+    };
+  } else {
+    scene = {
+      label: 'Personal story',
+      colors: ['#ff7044', '#4488d4', '#ffd34e'],
+      art: '<path d="M55 67q29-17 63 0v81q-34-16-63 0zm63 0q32-17 66 0v81q-34-16-66 0z" fill="#fff0c1" stroke="#143a58" stroke-width="6" stroke-linejoin="round"/><path d="M71 91h31m-31 14h30m33-14h34m-34 14h31" stroke="#35b8b1" stroke-width="6" stroke-linecap="round"/><path d="m117 47 6 13 14 2-11 9 3 14-12-7-12 7 3-14-11-9 14-2z" fill="#ff7044" stroke="#143a58" stroke-width="4" stroke-linejoin="round"/><circle cx="54" cy="49" r="8" fill="#7254c8"/><circle cx="188" cy="48" r="9" fill="#35b8b1"/>'
+    };
+  }
+
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 170" role="img" aria-label="' + scene.label + ' story illustration">' +
+    '<rect x="5" y="5" width="230" height="160" rx="35" fill="#fff6df"/>' +
+    '<path d="M12 47Q48 14 92 35T174 27q32-10 55 17l-8 100q-41 21-83 7t-122 1z" fill="' + scene.colors[0] + '" opacity=".16"/>' +
+    '<path d="M17 126q38-19 74-3t70-1 62 1" fill="none" stroke="' + scene.colors[1] + '" stroke-width="10" stroke-linecap="round" opacity=".7"/>' +
+    '<path d="M25 38q29-16 55-2m89 7q21-13 44 0" fill="none" stroke="' + scene.colors[2] + '" stroke-width="7" stroke-linecap="round" opacity=".8"/>' +
+    scene.art +
+    '<path d="M17 83q5-7 10 0m183 47q5-7 10 0" fill="none" stroke="' + scene.colors[0] + '" stroke-width="5" stroke-linecap="round"/>' +
+    '</svg>';
 }
 
 function storyHint(pin) {
@@ -355,6 +426,7 @@ window.openView = function(id) {
   var badge = document.getElementById('v-badge');
   badge.textContent = '\uD83C\uDFE0 Personal Story';
   badge.className   = 'badge personal';
+  document.getElementById('v-artwork').innerHTML = storyArtwork(p);
   document.getElementById('v-title').textContent    = p.title;
   document.getElementById('v-location').textContent =
     '\uD83D\uDCCD ' + (p.country ? p.country + '  ' : '') +
