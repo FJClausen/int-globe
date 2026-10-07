@@ -35,6 +35,7 @@ var activeMode = 'map';
 var isPresentation = false;
 var placing = false;
 var pendingLL = null;
+var editingPinId = null;
 var store = {};
 var globeContainer = document.getElementById('globe');
 
@@ -66,22 +67,24 @@ function initGlobe() {
     .showAtmosphere(true)
     .atmosphereColor('#72c8ff')
     .atmosphereAltitude(0.18)
-    .htmlElementsData([])
-    .htmlLat(function(pin) { return +pin.lat; })
-    .htmlLng(function(pin) { return +pin.lng; })
-    .htmlAltitude(0.012)
-    .htmlElement(function(pin) {
-      var marker = document.createElement('button');
-      marker.className = 'globe-marker';
-      marker.type = 'button';
-      marker.title = pin.title;
-      marker.setAttribute('aria-label', 'Read story: ' + pin.title);
-      marker.addEventListener('click', function(event) {
-        event.stopPropagation();
-        window.openView(pin.id);
-      });
-      return marker;
-    })
+    .pointsData([])
+    .pointLat(function(pin) { return +pin.lat; })
+    .pointLng(function(pin) { return +pin.lng; })
+    .pointAltitude(0.004)
+    .pointRadius(0.65)
+    .pointResolution(12)
+    .pointColor(function() { return '#ffc878'; })
+    .onPointClick(function(pin) { window.openView(pin.id); })
+    .labelsData([])
+    .labelLat(function(pin) { return Math.min(89.9, +pin.lat + 0.8); })
+    .labelLng(function(pin) { return +pin.lng; })
+    .labelAltitude(0.022)
+    .labelText(function(pin) { return storyHint(pin); })
+    .labelSize(0.72)
+    .labelColor(function() { return 'rgba(239, 250, 255, 0.96)'; })
+    .labelResolution(2)
+    .labelDotRadius(0)
+    .onLabelClick(function(pin) { window.openView(pin.id); })
     .onGlobeClick(function(coords) {
       if (placing) onMapClick({ latlng: { lat: coords.lat, lng: coords.lng } });
     });
@@ -102,7 +105,24 @@ function updateGlobeSize() {
 }
 
 function updateGlobePins() {
-  if (globe) globe.htmlElementsData(loadPins());
+  if (!globe) return;
+  var pins = loadPins();
+  globe.pointsData(pins);
+  globe.labelsData(pins);
+}
+
+function storyHint(pin) {
+  var ignored = /^(a|an|and|are|as|at|be|by|for|from|in|is|it|my|of|on|or|our|the|to|was|we|where|with)$/i;
+  var words = ((pin.title || '') + ' ' + (pin.story || ''))
+    .match(/[\p{L}\p{N}]+/gu) || [];
+  var hints = [];
+  words.forEach(function(word) {
+    if (hints.length < 2 && !ignored.test(word) && word.length > 1 &&
+        !hints.some(function(hint) { return hint.toLowerCase() === word.toLowerCase(); })) {
+      hints.push(word);
+    }
+  });
+  return hints.join(' ') || 'A story';
 }
 
 function setMapMode(mode) {
@@ -187,6 +207,7 @@ var fab       = document.getElementById('fab');
 var placeHint = document.getElementById('place-hint');
 var pinModal  = document.getElementById('pin-modal');
 var saveBtn   = document.getElementById('save-btn');
+var pinFormTitle = document.querySelector('#pin-modal h2');
 
 fab.addEventListener('click', function() {
   if (placing) cancelPlace(); else startPlace();
@@ -195,7 +216,7 @@ fab.addEventListener('click', function() {
 document.getElementById('hint-cancel').addEventListener('click', cancelPlace);
 
 function startPlace() {
-  placing = true; pendingLL = null;
+  placing = true; pendingLL = null; editingPinId = null;
   fab.classList.add('placing'); fab.title = 'Cancel (Esc)';
   if (activeMode === 'map') map.getContainer().style.cursor = 'crosshair';
   else globeContainer.style.cursor = 'crosshair';
@@ -204,12 +225,14 @@ function startPlace() {
 }
 
 function cancelPlace() {
-  placing = false; pendingLL = null;
+  placing = false; pendingLL = null; editingPinId = null;
   fab.classList.remove('placing'); fab.title = 'Add story';
   map.getContainer().style.cursor = '';
   globeContainer.style.cursor = '';
   placeHint.classList.add('hidden');
   pinModal.classList.add('hidden');
+  pinFormTitle.textContent = '\uD83D\uDCCD Add a Story';
+  saveBtn.textContent = 'Save Story';
 }
 
 // Step 2: map click — record location, open form
@@ -235,22 +258,37 @@ saveBtn.addEventListener('click', function() {
   if (!pendingLL) return;
   var author = getAuthor();
   if (!author) { alert('Please enter your name in the header first.'); return; }
-  var pin = {
-    id:          genId(),
-    pin_type:    'personal',
-    title:       document.getElementById('f-title').value.trim(),
-    story:       document.getElementById('f-story').value.trim(),
-    lat:         pendingLL.lat,
-    lng:         pendingLL.lng,
-    country:     document.getElementById('f-country').value.trim(),
-    author_name: author,
-    created_at:  new Date().toISOString(),
-  };
-  if (!pin.title) { alert('A title is required.'); return; }
+  var title = document.getElementById('f-title').value.trim();
+  if (!title) { alert('A title is required.'); return; }
   var pins = loadPins();
-  pins.push(pin);
+  var pin = editingPinId
+    ? pins.find(function(item) { return item.id === editingPinId; })
+    : null;
+  if (editingPinId && (!pin || pin.author_name !== author)) {
+    alert('This story is no longer available to edit.');
+    cancelPlace();
+    return;
+  }
+  if (pin) {
+    pin.title = title;
+    pin.story = document.getElementById('f-story').value.trim();
+    pin.country = document.getElementById('f-country').value.trim();
+  } else {
+    pin = {
+      id: genId(),
+      pin_type: 'personal',
+      title: title,
+      story: document.getElementById('f-story').value.trim(),
+      lat: pendingLL.lat,
+      lng: pendingLL.lng,
+      country: document.getElementById('f-country').value.trim(),
+      author_name: author,
+      created_at: new Date().toISOString(),
+    };
+    pins.push(pin);
+  }
   savePins(pins);
-  renderPin(pin);
+  reloadAllPins();
   cancelPlace();
 });
 
@@ -273,6 +311,10 @@ window.openView = function(id) {
   var acts = document.getElementById('v-actions');
   acts.innerHTML = '';
   if (p.author_name === getAuthor() && getAuthor()) {
+    var edit = document.createElement('button');
+    edit.className = 'ghost edit-story'; edit.textContent = 'Edit Story';
+    edit.onclick = function() { editPin(id); };
+    acts.appendChild(edit);
     var d = document.createElement('button');
     d.className = 'ghost danger'; d.textContent = 'Delete Story';
     d.onclick = function() { deletePin(id); };
@@ -280,6 +322,23 @@ window.openView = function(id) {
   }
   viewModal.classList.remove('hidden');
 };
+
+function editPin(id) {
+  var pin = store[id];
+  if (!pin || !getAuthor() || pin.author_name !== getAuthor()) return;
+  editingPinId = id;
+  pendingLL = { lat: +pin.lat, lng: +pin.lng };
+  document.getElementById('f-title').value = pin.title || '';
+  document.getElementById('f-story').value = pin.story || '';
+  document.getElementById('f-country').value = pin.country || '';
+  document.getElementById('f-coords').textContent =
+    '\uD83D\uDCCD ' + pendingLL.lat.toFixed(4) + ', ' + pendingLL.lng.toFixed(4);
+  pinFormTitle.textContent = '\u270E Edit Your Story';
+  saveBtn.textContent = 'Save Changes';
+  viewModal.classList.add('hidden');
+  pinModal.classList.remove('hidden');
+  document.getElementById('f-title').focus();
+}
 
 document.getElementById('v-close').addEventListener('click', function() { viewModal.classList.add('hidden'); });
 viewModal.addEventListener('click', function(e) { if (e.target === viewModal) viewModal.classList.add('hidden'); });
@@ -336,6 +395,7 @@ function enterPresentation() {
   if (!setMapMode('globe')) return;
   isPresentation = true;
   document.body.classList.add('presentation');
+  document.getElementById('presentation-brand').classList.remove('hidden');
   document.getElementById('presentation-exit').classList.remove('hidden');
   updateFab();
   requestAnimationFrame(updateGlobeSize);
@@ -344,6 +404,7 @@ function enterPresentation() {
 function exitPresentation() {
   isPresentation = false;
   document.body.classList.remove('presentation');
+  document.getElementById('presentation-brand').classList.add('hidden');
   document.getElementById('presentation-exit').classList.add('hidden');
   updateFab();
   requestAnimationFrame(updateGlobeSize);

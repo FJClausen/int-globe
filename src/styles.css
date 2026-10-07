@@ -67,16 +67,6 @@ header {
 #map, #globe { flex: 1; min-height: 0; z-index: 1; }
 #globe { background: #070b16; overflow: hidden; }
 .leaflet-bottom { bottom: 2.4rem; }
-.globe-marker {
-  width: 13px; height: 13px; padding: 0; border-radius: 50%;
-  border: 2px solid #fff; background: #27baf2;
-  box-shadow: 0 0 0 4px rgba(39,186,242,0.28), 0 0 14px rgba(39,186,242,0.95);
-  cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
-}
-.globe-marker:hover {
-  transform: scale(1.35);
-  box-shadow: 0 0 0 6px rgba(39,186,242,0.3), 0 0 18px rgba(39,186,242,1);
-}
 
 #fab {
   position: fixed; bottom: 3.8rem; right: 1.8rem;
@@ -96,6 +86,14 @@ header {
   cursor: pointer; font-size: 0.8rem; backdrop-filter: blur(8px);
 }
 #presentation-exit:hover { background: rgba(10,10,25,0.92); }
+.presentation-brand {
+  position: fixed; top: 1rem; left: 1rem; z-index: 1500;
+  width: clamp(76px, 10vw, 112px); aspect-ratio: 1;
+  padding: 3px; border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 10px; background: rgba(255,255,255,0.96);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.32);
+}
+.presentation-brand img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 7px; }
 body.presentation header, body.presentation #share-bar, body.presentation #fab,
 body.presentation #place-hint { display: none; }
 .hidden { display: none !important; }
@@ -165,6 +163,7 @@ body.presentation #place-hint { display: none; }
 }
 .actions button:first-child { background: #0078D4; color: #fff; }
 .actions button:first-child:hover { background: #106ebe; }
+button.ghost.edit-story { border-color: rgba(79,195,247,0.35) !important; color: #8bdcff; }
 button.ghost {
   background: transparent !important;
   border: 1px solid rgba(255,255,255,0.17) !important;
