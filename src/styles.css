@@ -144,6 +144,10 @@ body.presentation #place-hint { display: none; }
   text-transform: uppercase; letter-spacing: 0.05em;
   margin-bottom: 0.8rem;
 }
+.box label .field-help {
+  color: #94a3b8; font-size: 0.74rem; line-height: 1.45;
+  letter-spacing: 0; text-transform: none;
+}
 .box input, .box select, .box textarea {
   padding: 0.48rem 0.68rem;
   background: rgba(255,255,255,0.055);

@@ -2,7 +2,7 @@
 
 Interactive map for **Personal Stories** — "where I'm from" stories from people across the organisation. The flat map combines satellite imagery with country boundaries and place labels; zoom in to see cities and find a hometown before placing a story. Switch to the automatically rotating 3D globe at any time. **Present** opens a clean, full-screen globe view for conference rooms; press Escape or use the exit button to return.
 
-Add stories by entering your name, choosing a location on either view, and filling in the story form. Open one of your stories to edit it later. On the globe, each location is marked on the surface with a short hint from its title or story. The Culture Club logo appears in the app header and presentation view. Older case/mission pins are no longer displayed or accepted; existing stored records are left untouched.
+Add stories by entering your name, choosing a location on either view, and filling in the guided story form. Open one of your stories to edit it later. On the globe, each location has a gold marker and a high-contrast story hint with the author's name below it. The Culture Club logo appears in the app header and presentation view. Older case/mission pins are no longer displayed or accepted; existing stored records are left untouched.
 
 ## Architecture
 

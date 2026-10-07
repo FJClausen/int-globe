@@ -56,6 +56,10 @@ function initMap() {
 
 function initGlobe() {
   if (globe) return true;
+  if (typeof THREE !== 'object') {
+    alert('The globe graphics library could not be loaded. Check your internet connection and try again.');
+    return false;
+  }
   if (typeof Globe !== 'function') {
     alert('The 3D globe could not be loaded. Check your internet connection and try again.');
     return false;
@@ -75,16 +79,13 @@ function initGlobe() {
     .pointResolution(12)
     .pointColor(function() { return '#ffc878'; })
     .onPointClick(function(pin) { window.openView(pin.id); })
-    .labelsData([])
-    .labelLat(function(pin) { return Math.min(89.9, +pin.lat + 0.8); })
-    .labelLng(function(pin) { return +pin.lng; })
-    .labelAltitude(0.022)
-    .labelText(function(pin) { return storyHint(pin); })
-    .labelSize(0.72)
-    .labelColor(function() { return 'rgba(239, 250, 255, 0.96)'; })
-    .labelResolution(2)
-    .labelDotRadius(0)
-    .onLabelClick(function(pin) { window.openView(pin.id); })
+    .objectsData([])
+    .objectLat(function(pin) { return Math.max(-89.5, +pin.lat - 7); })
+    .objectLng(function(pin) { return +pin.lng; })
+    .objectAltitude(0.025)
+    .objectFacesSurface(true)
+    .objectThreeObject(createStoryTag)
+    .onObjectClick(function(pin) { window.openView(pin.id); })
     .onGlobeClick(function(coords) {
       if (placing) onMapClick({ latlng: { lat: coords.lat, lng: coords.lng } });
     });
@@ -107,8 +108,62 @@ function updateGlobeSize() {
 function updateGlobePins() {
   if (!globe) return;
   var pins = loadPins();
+  globe.objectsData([]);
   globe.pointsData(pins);
-  globe.labelsData(pins);
+  globe.objectsData(pins);
+}
+
+function createStoryTag(pin) {
+  var width = 640;
+  var height = 164;
+  var canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  var context = canvas.getContext('2d');
+  if (!context) throw new Error('Could not create story marker canvas');
+
+  context.beginPath();
+  context.roundRect(4, 4, width - 8, 78, 26);
+  context.fillStyle = 'rgba(5, 17, 35, 0.96)';
+  context.fill();
+  context.lineWidth = 3;
+  context.strokeStyle = 'rgba(255, 200, 120, 0.82)';
+  context.stroke();
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.font = '600 34px "Segoe UI", Arial, sans-serif';
+  context.fillStyle = '#ffffff';
+  context.fillText(storyHint(pin), width / 2, 43, width - 44);
+  var author = pin.author_name || 'Anonymous';
+  context.font = 'italic 600 30px "Segoe UI", Arial, sans-serif';
+  context.fillStyle = '#a9e3ff';
+  var authorWidth = Math.min(width - 20, Math.max(180, context.measureText(author).width + 44));
+  var authorLeft = (width - authorWidth) / 2;
+  context.beginPath();
+  context.roundRect(authorLeft, 94, authorWidth, 62, 22);
+  context.fillStyle = 'rgba(5, 17, 35, 0.82)';
+  context.fill();
+  context.lineWidth = 2;
+  context.strokeStyle = 'rgba(139, 220, 255, 0.5)';
+  context.stroke();
+  context.fillStyle = '#a9e3ff';
+  context.fillText(author, width / 2, 125, authorWidth - 24);
+
+  var texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  var material = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    toneMapped: false,
+  });
+  var radius = globe.getGlobeRadius();
+  var tagWidth = radius * 0.6;
+  var tagHeight = tagWidth * height / width;
+  var tag = new THREE.Mesh(new THREE.PlaneGeometry(tagWidth, tagHeight), material);
+  tag.userData.pinId = pin.id;
+  return tag;
 }
 
 function storyHint(pin) {

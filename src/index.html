@@ -46,12 +46,15 @@
       <p id="f-coords" class="coords-display"></p>
       <label>Title *
         <input id="f-title" type="text" maxlength="200" placeholder="A short title&#8230;" />
+        <span class="field-help">Give your story a memorable title. The globe turns a couple of words from it into your pin hint.</span>
       </label>
       <label>Story
         <textarea id="f-story" rows="5" placeholder="Share your story&#8230;"></textarea>
+        <span class="field-help">Share a memory, tradition, or what makes this place home. Your story appears when someone opens your pin.</span>
       </label>
       <label>Country / Place
         <input id="f-country" type="text" placeholder="e.g. Kenya, Nairobi" />
+        <span class="field-help">Add a country, city, or neighborhood. This appears with the location in your story.</span>
       </label>
       <div class="actions">
         <button id="save-btn">Save Story</button>
@@ -83,6 +86,7 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
   <script src="https://unpkg.com/globe.gl@2.32.0/dist/globe.gl.min.js"></script>
   <script src="app.js"></script>
 </body>
